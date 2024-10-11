@@ -5,9 +5,9 @@ const core = require('@actions/core');
 // Main function to execute the update process
 async function main() {
     try {
-        const targetRepos = ['repo1', 'repo2']; // 替換為你的實際邏輯來獲取目標存儲庫列表
+        const targetRepos = ['repo1', 'repo2']; // Replace with your actual logic to fetch target repositories
         const activity = await fetchAndFilterEvents({ targetRepos, username, token, eventLimit, ignoreEvents });
-        // 其他的處理邏輯，例如更新 README 文件
+        // Additional processing logic, such as updating the README file
     } catch (error) {
         core.setFailed(`❌ Error in the update process: ${error.message}`);
         console.error(error);
