@@ -44,5 +44,7 @@ module.exports = {
     style: processStyle(core.getInput('OUTPUT_STYLE')),
     ignoreEvents: processIgnoreEvents(core.getInput('IGNORE_EVENTS')),
     readmePath: core.getInput('README_PATH'),
-    commitMessage: core.getInput('COMMIT_MESSAGE')
+    commitMessage: core.getInput('COMMIT_MESSAGE'),
+    targetRepos: ['repo1/owner1', 'repo2/owner2']  // Replace with your desired repositories
 };
+
