@@ -186,6 +186,3 @@ module.exports = {
     fetchAndFilterEvents,
 };
 
-
-
-// 123
