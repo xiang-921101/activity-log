@@ -66,7 +66,7 @@ function encodeHTML(str) {
 }
 
 // Function to fetch all events with pagination and apply filtering
-async function fetchAllEvents() {
+async function fetchAllEvents(username, eventLimit) {
     let allEvents = [];
     let page = 1;
 
@@ -102,9 +102,9 @@ async function fetchAllEvents() {
 }
 
 // Function to fetch and filter events
-async function fetchAndFilterEvents({ targetRepos }) {
+async function fetchAndFilterEvents({ targetRepos, username, token, eventLimit, ignoreEvents }) {
     const { starredRepoNames } = await fetchAllStarredRepos();
-    let allEvents = await fetchAllEvents();
+    let allEvents = await fetchAllEvents(username, eventLimit);
 
     let filteredEvents = [];
 
@@ -123,7 +123,7 @@ async function fetchAndFilterEvents({ targetRepos }) {
             .slice(0, eventLimit);
 
         if (filteredEvents.length < eventLimit) {
-            const additionalEvents = await fetchAllEvents();
+            const additionalEvents = await fetchAllEvents(username, eventLimit);
             allEvents = additionalEvents.concat(allEvents);
         } else {
             break;
