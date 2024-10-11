@@ -1,13 +1,7 @@
 const github = require('@actions/github');
 const core = require('@actions/core');
-const eventDescriptions = require('./eventDescriptions');
+const eventDescriptions = require('../eventDescriptions');
 const { username, token, eventLimit, style, ignoreEvents } = require('../config');
-
-// Check if the token is available
-if (!token) {
-    core.setFailed('❌ GitHub token is missing in the config.');
-    process.exit(1);
-}
 
 // Create an authenticated Octokit client
 const octokit = github.getOctokit(token);
@@ -67,7 +61,7 @@ function isTriggeredByGitHubActions(event) {
 // Helper function to encode URLs
 function encodeHTML(str) {
     return str
-        .replace(/`([^`]+)`/g, '<code>$1</code>') 
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
         .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
 }
 
