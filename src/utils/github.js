@@ -9,7 +9,6 @@ if (!token) {
     process.exit(1);
 }
 
-
 // Create an authenticated Octokit client
 const octokit = github.getOctokit(token);
 
@@ -54,14 +53,12 @@ async function fetchAllStarredRepos() {
 
 // Function to check if the event was likely triggered by GitHub Actions or bots
 function isTriggeredByGitHubActions(event) {
-    // Regex patterns to match common GitHub Actions or bot commit messages
     const botPatterns = /(\[bot\]|GitHub Actions|github-actions)/i;
 
-    // Check if the commit author name matches any of the bot patterns
     const isCommitEvent = event.type === 'PushEvent' && event.payload && event.payload.commits;
     if (isCommitEvent) {
         return event.payload.commits.some(commit =>
-            botPatterns.test(commit.author.name) // Test commit message against regex patterns
+            botPatterns.test(commit.author.name)
         );
     }
     return false;
@@ -70,8 +67,8 @@ function isTriggeredByGitHubActions(event) {
 // Helper function to encode URLs
 function encodeHTML(str) {
     return str
-        .replace(/`([^`]+)`/g, '<code>$1</code>') // Convert inline code (single backticks) to HTML <code> tags
-        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>'); // Convert [text](url) to <a href="url">text</a>
+        .replace(/`([^`]+)`/g, '<code>$1</code>') 
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
 }
 
 // Function to fetch all events with pagination and apply filtering
@@ -87,21 +84,18 @@ async function fetchAllEvents() {
                 page
             });
 
-            // Check for API rate limit or pagination issues
             if (events.length === 0) {
                 core.warning('⚠️ No more events available.');
-                break; // No more events to fetch
+                break;
             }
 
             allEvents = allEvents.concat(events);
             page++;
 
-            // Exit loop if we have enough events
             if (allEvents.length >= eventLimit) {
                 break;
             }
 
-            // Introduce a small delay to avoid hitting rate limits
             await delay(500);
 
         } catch (error) {
@@ -114,7 +108,7 @@ async function fetchAllEvents() {
 }
 
 // Function to fetch and filter events
-async function fetchAndFilterEvents() {
+async function fetchAndFilterEvents({ targetRepos }) {
     const { starredRepoNames } = await fetchAllStarredRepos();
     let allEvents = await fetchAllEvents();
 
@@ -128,7 +122,6 @@ async function fetchAndFilterEvents() {
             .map(event => {
                 if (event.type === 'WatchEvent') {
                     const isStarred = starredRepoNames.has(event.repo.name);
-                    // Change the event type to 'StarEvent' if the repo is starred
                     return { ...event, type: isStarred ? 'StarEvent' : 'WatchEvent' };
                 }
                 return event;
@@ -152,7 +145,6 @@ async function fetchAndFilterEvents() {
         core.warning(`⚠️ Only ${fetchedEventCount} events met the criteria. ${totalFetchedEvents - fetchedEventCount} events were skipped due to filters.`);
     }
 
-    // Generate ordered list of events with descriptions
     const listItems = filteredEvents.map((event, index) => {
         const type = event.type;
         const repo = event.repo;
@@ -185,4 +177,3 @@ async function fetchAndFilterEvents() {
 module.exports = {
     fetchAndFilterEvents,
 };
-
