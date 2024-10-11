@@ -1,15 +1,10 @@
 const github = require('@actions/github');
 const core = require('@actions/core');
-const eventDescriptions = require('../eventDescriptions');
+const eventDescriptions = require('./eventDescriptions');
 const { username, token, eventLimit, style, ignoreEvents } = require('../config');
 
 // Create an authenticated Octokit client
 const octokit = github.getOctokit(token);
-
-// Helper function to delay execution to avoid API rate limits
-function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
 
 // Function to fetch starred repositories with pagination
 async function fetchAllStarredRepos() {
@@ -29,10 +24,6 @@ async function fetchAllStarredRepos() {
 
             starredRepos = starredRepos.concat(pageStarredRepos);
             page++;
-
-            // Introduce a small delay to avoid hitting rate limits
-            await delay(500);
-
         } catch (error) {
             core.setFailed(`❌ Error fetching starred repositories: ${error.message}`);
             process.exit(1);
@@ -47,12 +38,14 @@ async function fetchAllStarredRepos() {
 
 // Function to check if the event was likely triggered by GitHub Actions or bots
 function isTriggeredByGitHubActions(event) {
+    // Regex patterns to match common GitHub Actions or bot commit messages
     const botPatterns = /(\[bot\]|GitHub Actions|github-actions)/i;
 
+    // Check if the commit author name matches any of the bot patterns
     const isCommitEvent = event.type === 'PushEvent' && event.payload && event.payload.commits;
     if (isCommitEvent) {
         return event.payload.commits.some(commit =>
-            botPatterns.test(commit.author.name)
+            botPatterns.test(commit.author.name) // Test commit message against regex patterns
         );
     }
     return false;
@@ -61,12 +54,12 @@ function isTriggeredByGitHubActions(event) {
 // Helper function to encode URLs
 function encodeHTML(str) {
     return str
-        .replace(/`([^`]+)`/g, '<code>$1</code>')
-        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+        .replace(/`([^`]+)`/g, '<code>$1</code>') // Convert inline code (single backticks) to HTML <code> tags
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>'); // Convert [text](url) to <a href="url">text</a>
 }
 
 // Function to fetch all events with pagination and apply filtering
-async function fetchAllEvents(username, eventLimit) {
+async function fetchAllEvents() {
     let allEvents = [];
     let page = 1;
 
@@ -78,20 +71,19 @@ async function fetchAllEvents(username, eventLimit) {
                 page
             });
 
+            // Check for API rate limit or pagination issues
             if (events.length === 0) {
                 core.warning('⚠️ No more events available.');
-                break;
+                break; // No more events to fetch
             }
 
             allEvents = allEvents.concat(events);
             page++;
 
+            // Exit loop if we have enough events
             if (allEvents.length >= eventLimit) {
                 break;
             }
-
-            await delay(500);
-
         } catch (error) {
             core.setFailed(`❌ Error fetching events: ${error.message}`);
             process.exit(1);
@@ -102,9 +94,9 @@ async function fetchAllEvents(username, eventLimit) {
 }
 
 // Function to fetch and filter events
-async function fetchAndFilterEvents({ targetRepos, username, token, eventLimit, ignoreEvents }) {
+async function fetchAndFilterEvents() {
     const { starredRepoNames } = await fetchAllStarredRepos();
-    let allEvents = await fetchAllEvents(username, eventLimit);
+    let allEvents = await fetchAllEvents();
 
     let filteredEvents = [];
 
@@ -112,10 +104,10 @@ async function fetchAndFilterEvents({ targetRepos, username, token, eventLimit, 
         filteredEvents = allEvents
             .filter(event => !ignoreEvents.includes(event.type))
             .filter(event => !isTriggeredByGitHubActions(event))
-            .filter(event => targetRepos.includes(event.repo.name))
             .map(event => {
                 if (event.type === 'WatchEvent') {
                     const isStarred = starredRepoNames.has(event.repo.name);
+                    // Change the event type to 'StarEvent' if the repo is starred
                     return { ...event, type: isStarred ? 'StarEvent' : 'WatchEvent' };
                 }
                 return event;
@@ -123,7 +115,7 @@ async function fetchAndFilterEvents({ targetRepos, username, token, eventLimit, 
             .slice(0, eventLimit);
 
         if (filteredEvents.length < eventLimit) {
-            const additionalEvents = await fetchAllEvents(username, eventLimit);
+            const additionalEvents = await fetchAllEvents();
             allEvents = additionalEvents.concat(allEvents);
         } else {
             break;
@@ -139,6 +131,7 @@ async function fetchAndFilterEvents({ targetRepos, username, token, eventLimit, 
         core.warning(`⚠️ Only ${fetchedEventCount} events met the criteria. ${totalFetchedEvents - fetchedEventCount} events were skipped due to filters.`);
     }
 
+    // Generate ordered list of events with descriptions
     const listItems = filteredEvents.map((event, index) => {
         const type = event.type;
         const repo = event.repo;
