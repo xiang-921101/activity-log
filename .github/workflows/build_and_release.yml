@@ -33,6 +33,7 @@ jobs:
           git push
   test:
     runs-on: ubuntu-latest
+    needs: build
     defaults:
       run:
         shell: bash
@@ -52,7 +53,7 @@ jobs:
           
   release:
     runs-on: ubuntu-latest
-    needs: build
+    needs: test
     steps:
       - uses: actions/checkout@v4
       - name: Pull latest
