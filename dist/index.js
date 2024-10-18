@@ -30353,20 +30353,8 @@ const core = __nccwpck_require__(9619);
 const eventDescriptions = __nccwpck_require__(2619);
 const { username, token, eventLimit, style, ignoreEvents } = __nccwpck_require__(9530);
 
-// Check if the token is available
-if (!token) {
-    core.setFailed('❌ GitHub token is missing in the config.');
-    process.exit(1);
-}
-
-
 // Create an authenticated Octokit client
 const octokit = github.getOctokit(token);
-
-// Helper function to delay execution to avoid API rate limits
-function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
 
 // Function to fetch starred repositories with pagination
 async function fetchAllStarredRepos() {
@@ -30386,10 +30374,6 @@ async function fetchAllStarredRepos() {
 
             starredRepos = starredRepos.concat(pageStarredRepos);
             page++;
-
-            // Introduce a small delay to avoid hitting rate limits
-            await delay(500);
-
         } catch (error) {
             core.setFailed(`❌ Error fetching starred repositories: ${error.message}`);
             process.exit(1);
@@ -30450,10 +30434,6 @@ async function fetchAllEvents() {
             if (allEvents.length >= eventLimit) {
                 break;
             }
-
-            // Introduce a small delay to avoid hitting rate limits
-            await delay(500);
-
         } catch (error) {
             core.setFailed(`❌ Error fetching events: ${error.message}`);
             process.exit(1);
@@ -30474,7 +30454,6 @@ async function fetchAndFilterEvents() {
         filteredEvents = allEvents
             .filter(event => !ignoreEvents.includes(event.type))
             .filter(event => !isTriggeredByGitHubActions(event))
-            .filter(event => targetRepos.includes(event.repo.name))
             .map(event => {
                 if (event.type === 'WatchEvent') {
                     const isStarred = starredRepoNames.has(event.repo.name);
@@ -30535,7 +30514,6 @@ async function fetchAndFilterEvents() {
 module.exports = {
     fetchAndFilterEvents,
 };
-
 
 
 /***/ }),
