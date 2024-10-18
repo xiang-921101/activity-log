@@ -31,7 +31,7 @@ jobs:
           git config user.email '132485665+xiang-921101@users.noreply.github.com'
           git commit -am "dist build"
           git push
-  test：
+  test:
     runs-on: ubuntu-latest
     defaults:
       run:
